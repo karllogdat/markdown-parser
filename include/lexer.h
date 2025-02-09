@@ -5,19 +5,27 @@
 #include <string>
 
 enum class TokenType {
-    HEADING,
+    HASH,
+    ASTERISK,
+    BACKTICK,
+    SPACE,
+    NEW_LINE,
+    // TAB, ?
     TEXT,
-    BOLD,
-    ITALIC,
-    CODE,
-    LIST_ITEM,
-    BLOCKQUOTE,
+    NUMBER, // only count if start of line
+    DASH,
     END_OF_FILE,
 };
 
 struct Token {
     TokenType type;
     std::string value;
+    bool isStartOfLine;
+
+    Token(TokenType t, std::string v = "", bool sol = false) :
+        type(t), value(v), isStartOfLine(sol) {}
+
+    void print();
 };
 
 class Lexer {
@@ -32,7 +40,6 @@ private:
 
     char peek() const;
     char advance();
-    void skipWhitespace();
 };
 
 #endif

@@ -21,8 +21,9 @@ int main(void) {
     Lexer markdownLexer(md);
 
     while (markdownLexer.hasNext()) {
-        Token token = markdownLexer.nextToken();
-        std::cout << static_cast<int>(token.type) << " | Value: " << token.value << std::endl;
+        Token tok = markdownLexer.nextToken();
+        std::cout << "--------------------" << std::endl;
+        tok.print();
     }
 
     return 0;

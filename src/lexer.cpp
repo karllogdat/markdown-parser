@@ -1,6 +1,47 @@
 #include "../include/lexer.h"
 #include <cctype>
+#include <iostream>
 #include <string>
+
+void Token::print() {
+    std::string tstr;
+    switch (type) {
+        case TokenType::HASH:
+            tstr = "HASH";
+            break;
+        case TokenType::ASTERISK:
+            tstr = "ASTERISK";
+            break;
+        case TokenType::BACKTICK:
+            tstr = "BACKTICK";
+            break;
+        case TokenType::SPACE:
+            tstr = "SPACE";
+            break;
+        case TokenType::NEW_LINE:
+            tstr = "NEW_LINE";
+            break;
+        case TokenType::TEXT:
+            tstr = "TEXT";
+            break;
+        case TokenType::NUMBER:
+            tstr = "NUMBER";
+            break;
+        case TokenType::DASH:
+            tstr = "DASH";
+            break;
+        case TokenType::END_OF_FILE:
+            tstr = "END_OF_FILE";
+            break;
+        default:
+            tstr = "UNKNOWN";
+            break;
+    }
+
+    std::cout << "[INFO] TokType: " << tstr << std::endl;
+    std::cout << "[INFO] IsSOL  : " << (isStartOfLine ? "True" : "False") << std::endl;
+    std::cout << "[INFO] Value  : " << value << std::endl;
+}
 
 Lexer::Lexer(const std::string& input) : input(input), position(0) {}
 
@@ -12,79 +53,65 @@ char Lexer::advance() {
     return position < input.size() ? input[position++] : '\0';
 }
 
-void Lexer::skipWhitespace() {
-    while (std::isspace(peek())) {
-        advance();
-    }
-}
 
 Token Lexer::nextToken() {
-    skipWhitespace();
-
-    // end of file token    
     if (position >= input.size()) {
-        return {TokenType::END_OF_FILE, ""};
+        return Token(TokenType::END_OF_FILE);
     }
 
-    char c = peek();
+    char c = advance();
+    bool isSol = true;
+    if (position > 1 || c == '\n') {
+        isSol = (input[position - 2] == '\n') ? true : false;
+    }
 
     if (c == '#') {
-        std::string value;
-        while (peek() == '#') {
-            value += advance();
-        }
-        return {TokenType::HEADING, value};
+        return Token(TokenType::HASH, {c}, isSol);
     }
 
     if (c == '*') {
-        // list items only start at the start of a line
-        if (position == 0 || input[position - 1] == '\n') {
-            if (position + 1 < input.size() && std::isspace(input[position] + 1)) {
-                std::string value;
-                // consume list marker *
-                value += advance();
-                // consume whitespaces
-                while (std::isspace(peek()) && peek() !=  '\n') {
-                    value += advance();
-                }
-                while (peek() != '\n' && peek() != '\0') {
-                    value += advance();
-                }
-                return {TokenType::LIST_ITEM, value};
-            }
-        }
-
-        // checks for bold / italic
-        char marker = advance(); // consumes marker
-        bool isBold = (peek() == marker);
-
-        // consume second marker
-        if (isBold)
-            advance();
-
-        std::string value;
-        while (peek() != marker && peek() != '\0') {
-            value += advance();
-        }
-
-        if (peek() == marker) {
-            advance();
-            if (isBold && peek() == marker) {
-                advance();
-                return {TokenType::BOLD, value};
-            }
-            return {TokenType::ITALIC, value};
-        }
-    } 
-
-    // default: text
-    // if the function reaches here it means it didnt
-    // identify all the other shit
-    std::string value;
-    while (position <= input.size() && peek() != '\n') {
-        value += advance();
+        return Token(TokenType::ASTERISK, {c}, isSol);
     }
-    return {TokenType::TEXT, value};
+
+    if (c == '`') {
+        return Token(TokenType::BACKTICK, {c}, isSol);
+    }
+
+    if (c == '\n') {
+        return Token(TokenType::NEW_LINE, {c}, isSol);
+    }
+
+    if (c == ' ' || c == '\t') {
+        return Token(TokenType::SPACE, {c}, isSol);
+    }
+
+    if (c == '-') {
+        return Token(TokenType::DASH, {c}, isSol);
+    }
+
+    if (std::isdigit(c) && isSol) {
+        std::string num;
+        num += c;
+        while (std::isdigit(peek()) || peek() == '.') {
+            num += advance();
+        }
+        return Token(TokenType::NUMBER, num, isSol);
+    }
+
+    // current char did not match any marker
+    std::string text;
+    text += c;
+    while (position <= input.size() &&
+            // list all markers here
+            peek() != '#' &&
+            peek() != '*' &&
+            peek() != '`' &&
+            peek() != '\n' &&
+            peek() != '-'
+            ) {
+        text += advance();
+    }
+    return Token(TokenType::TEXT, text, isSol);
 }
 
 bool Lexer::hasNext() const {
