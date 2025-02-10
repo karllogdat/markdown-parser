@@ -154,7 +154,7 @@ NodePtr Parser::parseInline() {
     }
 
     advance();
-    return std::make_shared<TextNode>("");
+    return std::make_shared<TextNode>(token.value);
 }
 
 NodePtr Parser::parseBlock() {
