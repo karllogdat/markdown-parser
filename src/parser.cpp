@@ -225,9 +225,11 @@ NodePtr Parser::parseBlock() {
     }
 
     auto node = std::make_shared<ParagraphNode>();
-    while (peek().type != TokenType::END_OF_FILE && 
-           peek().type != TokenType::NEW_LINE)
+    while (peek().type != TokenType::END_OF_FILE) {
+        if (peek().type == TokenType::NEW_LINE && peek().isStartOfLine)
+            break;
         node->children.push_back(parseInline());
+    }
 
     if (peek().type == TokenType::NEW_LINE)
         advance();
