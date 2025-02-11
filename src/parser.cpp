@@ -116,7 +116,7 @@ NodePtr Parser::parseInline() {
             advance();
             auto node = std::make_shared<BoldNode>();
             while (peek().type != TokenType::END_OF_FILE &&
-                   !(peek().type != TokenType::ASTERISK &&
+                   !(peek().type == TokenType::ASTERISK &&
                      position + 1 < tokens.size() &&
                      tokens[position + 1].type == TokenType::ASTERISK)) {
                 node->children.push_back(parseInline());
